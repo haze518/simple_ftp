@@ -1,0 +1,10 @@
+OK = b'200 Command OK'
+SERVICE_READY = b'220 Service ready'
+LOGGED_IN = b'230 User logged in'
+NOT_LOGGED_IN = b'530 Not logged in'
+SYNTAX_ERROR = b'500 Syntax error, command unrecognized'
+CANT_OPEN_DATA_CONNECTION = b"425 Can't open data connection"
+REQUESTED_ACTION_NOT_TAKEN = b'550 Requested action not taken'
+PATHNAME_CREATED = b'257 "PATHNAME" created'
+REQUESTED_ACTION_COMPLETED = b'250 Requested file action okay, completed'
+REQUEST_FILE_ACTION_ABORTED = b'552 Requested file action aborted'
