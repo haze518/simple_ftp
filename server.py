@@ -11,9 +11,13 @@ def configure_connection(host, port):
     print(f'run server on {host}:{port}')
     sock = bind_socket(host, port)
     while True:
-        conn, addr = sock.accept()
-        print(f'user: {addr}, connected')
-        FTPServer(conn, addr).run_server()
+        try:
+            conn, addr = sock.accept()
+            print(f'user: {addr}, connected')
+            FTPServer(conn, addr).run_server()
+        except KeyboardInterrupt:
+            sock.close()
+            break
 
 
 def bind_socket(host, port):
@@ -52,6 +56,7 @@ class FTPServer:
             else:
                 ftp_command = getattr(self, command)
                 ftp_command(arg)
+        self.data_connection.close()
 
     def argument_checker(check, message):
         """Проверка аргументов класса."""
