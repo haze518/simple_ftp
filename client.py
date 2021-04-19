@@ -14,7 +14,8 @@ class Client:
         return self
 
     def __exit__(self, *args, **kwargs):
-        self.data_connection.close()
+        if self.data_connection:
+            self.data_connection.close()
         self.user_pi.close()
 
     def create_data_connection(self, host, port):

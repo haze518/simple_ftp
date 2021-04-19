@@ -14,10 +14,11 @@ def configure_connection(host, port):
         try:
             conn, addr = sock.accept()
             print(f'user: {addr}, connected')
-            FTPServer(conn, addr).run_server()
+            with FTPServer(conn, addr) as ftp:
+                ftp.run_server()
         except KeyboardInterrupt:
-            sock.close()
             break
+    sock.close()
 
 
 def bind_socket(host, port):
@@ -27,6 +28,10 @@ def bind_socket(host, port):
     sock.bind((host, port))
     sock.listen()
     return sock
+
+
+def to_bytes(msg):
+    return bytes(msg, encoding='utf-8')
 
 
 class FTPServer:
@@ -43,6 +48,14 @@ class FTPServer:
         self.data_connection = False
         self.buffer_size = 1024
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        if self.data_connection:
+            self.data_connection.close()
+        self.connection.close()
+
     def run_server(self):
         while True:
             data = self.connection.recv(self.buffer_size)
@@ -56,7 +69,6 @@ class FTPServer:
             else:
                 ftp_command = getattr(self, command)
                 ftp_command(arg)
-        self.data_connection.close()
 
     def argument_checker(check, message):
         """Проверка аргументов класса."""
@@ -74,7 +86,7 @@ class FTPServer:
 
     def send_message(self, msg):
         if not isinstance(msg, bytes):
-            msg = bytes(msg, encoding='utf-8')
+            msg = to_bytes(msg)
         self.connection.send(msg)
 
     def command_exists(self, command):
@@ -97,7 +109,7 @@ class FTPServer:
         pbytes = [repr(port//256), repr(port%256)]
         port_bytes = hbytes + pbytes
         cmd = ','.join(port_bytes)
-        self.connection.sendall(bytes(cmd, 'utf-8'))
+        self.connection.sendall(to_bytes(cmd))
         self.data_connection, _ = sock.accept()
         self.pasv = True
 
@@ -111,11 +123,10 @@ class FTPServer:
     @argument_checker('pasv', codes.CANT_OPEN_DATA_CONNECTION)
     @argument_checker('is_logged', codes.NOT_LOGGED_IN)
     def LIST(self, path):
-
         """Вывести список файлов."""
         if os.path.exists(path):
             list_dir = '\n'.join(os.listdir(path))
-            self.data_connection.send(bytes(list_dir, encoding='utf-8'))
+            self.data_connection.send(to_bytes(list_dir))
         else:
             self.data_connection.send(codes.REQUESTED_ACTION_NOT_TAKEN)
 
@@ -125,7 +136,7 @@ class FTPServer:
         """Создание дирректории."""
         os.makedirs(dirname)
         msg = codes.PATHNAME_CREATED.decode('utf-8').replace("PATHNAME", f"{dirname}")
-        self.data_connection.send(bytes(msg, encoding='utf-8'))
+        self.data_connection.send(to_bytes(msg))
 
     @argument_checker('pasv', codes.CANT_OPEN_DATA_CONNECTION)
     @argument_checker('is_logged', codes.NOT_LOGGED_IN)
